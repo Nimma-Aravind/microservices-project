@@ -1,7 +1,22 @@
 pipeline {
     agent any
+    tools {
+        maven 'mymaven'
+    }
 
     stages {
+        stage('CQA') {
+            steps {
+                withSonarQubeEnv('sonarqube') {
+                sh "mvn clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=myproject -Dsonar.projectName=myproject"
+                }
+            }
+        }
+        stage('Quality Gates') {
+            steps {
+                waitForQualityGate abortPipeline: true, credentialsId: 'sonar-cred'
+            }
+        }
         stage('Build & Tag Docker Image') {
             steps {
                 script {
